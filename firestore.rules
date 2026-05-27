@@ -1,0 +1,252 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model – Athena AI Tutor
+// ===============================================================
+//
+// Collection: parents/{parentId}
+//   Document ID: Firebase Auth UID
+//   Fields:
+//     - email: string (required, immutable after create)
+//     - displayName: string (required, 1–100 chars)
+//     - aiModel: string (required, one of "openai" | "anthropic" | "gemini")
+//     - createdAt: timestamp (required, immutable after create)
+//
+// Subcollection: parents/{parentId}/children/{childId}
+//   Fields:
+//     - username: string (required, 1–50 chars)
+//     - firstName: string (required, 1–50 chars)
+//     - yearOfBirth: number (required, 1900–2100)
+//     - pin: string (required, hashed, 1–256 chars)
+//     - totalPoints: number (required, >= 0)
+//     - createdAt: timestamp (required, immutable after create)
+//
+// Subcollection: parents/{parentId}/children/{childId}/subjects/{subjectId}
+//   Fields:
+//     - assessmentComplete: bool (required)
+//     - currentLevel: number (required, 1–8)
+//     - emaScore: number (required, >= 0)
+//     - totalAnswers: number (required, >= 0)
+//     - strengths: list (required, max 50 items, each string <= 200 chars)
+//     - weaknesses: list (required, max 50 items, each string <= 200 chars)
+//
+// Subcollection: .../subjects/{subjectId}/modules/{moduleId}
+//   Fields:
+//     - moduleName: string (required, 1–200 chars)
+//     - moduleNumber: number (required, >= 1)
+//     - status: string (required, one of "locked" | "unlocked" | "completed")
+//     - lessonPlan: map | null (optional)
+//     - lessonProgress: number (required, 0–100)
+//     - practiceEmaScore: number (required, >= 0)
+//     - practiceAnswerCount: number (required, >= 0)
+//     - moduleStrengths: list (required, max 50 items, each string <= 200 chars)
+//     - moduleWeaknesses: list (required, max 50 items, each string <= 200 chars)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =============================================================
+    // Helper Functions
+    // =============================================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user is the parent (document owner)
+    function isParent(parentId) {
+      return isAuthenticated() && request.auth.uid == parentId;
+    }
+
+    // Validate required fields exist in the incoming document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate the document contains ONLY the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate that immutable fields have not changed on update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Validate string field within length bounds
+    function validString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    // Validate a list of strings with max items and max item length
+    function isValidStringList(field, maxItems, maxItemLen) {
+      let data = request.resource.data[field];
+      return data is list &&
+        data.size() <= maxItems;
+      // Note: Firestore rules cannot iterate list elements for per-item validation.
+      // Application-level validation should enforce individual string lengths.
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // =============================================================
+    // Domain Validators
+    // =============================================================
+
+    // Validate ParentProfile document
+    function isValidParent() {
+      let data = request.resource.data;
+      let allowedFields = ['email', 'displayName', 'aiModel', 'createdAt'];
+      let requiredFields = ['email', 'displayName', 'aiModel', 'createdAt'];
+      let validModels = ['openai', 'anthropic', 'gemini'];
+
+      return hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(requiredFields) &&
+        isValidEmail(data.email) &&
+        data.email.size() <= 320 &&
+        validString('displayName', 1, 100) &&
+        data.aiModel is string &&
+        data.aiModel in validModels &&
+        data.createdAt is timestamp;
+    }
+
+    // Validate ChildProfile document
+    function isValidChild() {
+      let data = request.resource.data;
+      let allowedFields = ['username', 'firstName', 'yearOfBirth', 'pin', 'totalPoints', 'createdAt'];
+      let requiredFields = ['username', 'firstName', 'yearOfBirth', 'pin', 'totalPoints', 'createdAt'];
+
+      return hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(requiredFields) &&
+        validString('username', 1, 50) &&
+        validString('firstName', 1, 50) &&
+        data.yearOfBirth is int &&
+        data.yearOfBirth >= 1900 &&
+        data.yearOfBirth <= 2100 &&
+        validString('pin', 1, 256) &&
+        data.totalPoints is number &&
+        data.totalPoints >= 0 &&
+        data.createdAt is timestamp;
+    }
+
+    // Validate SubjectProgress document
+    function isValidSubject() {
+      let data = request.resource.data;
+      let allowedFields = ['assessmentComplete', 'currentLevel', 'emaScore', 'totalAnswers', 'strengths', 'weaknesses'];
+      let requiredFields = ['assessmentComplete', 'currentLevel', 'emaScore', 'totalAnswers', 'strengths', 'weaknesses'];
+
+      return hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(requiredFields) &&
+        data.assessmentComplete is bool &&
+        data.currentLevel is int &&
+        data.currentLevel >= 1 &&
+        data.currentLevel <= 8 &&
+        data.emaScore is number &&
+        data.emaScore >= 0 &&
+        data.totalAnswers is int &&
+        data.totalAnswers >= 0 &&
+        isValidStringList('strengths', 50, 200) &&
+        isValidStringList('weaknesses', 50, 200);
+    }
+
+    // Validate ModuleProgress document
+    function isValidModule() {
+      let data = request.resource.data;
+      let allowedFields = ['moduleName', 'moduleNumber', 'status', 'lessonPlan', 'lessonProgress', 'practiceEmaScore', 'practiceAnswerCount', 'moduleStrengths', 'moduleWeaknesses'];
+      let requiredFields = ['moduleName', 'moduleNumber', 'status', 'lessonProgress', 'practiceEmaScore', 'practiceAnswerCount', 'moduleStrengths', 'moduleWeaknesses'];
+      let validStatuses = ['locked', 'unlocked', 'completed'];
+
+      return hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(requiredFields) &&
+        validString('moduleName', 1, 200) &&
+        data.moduleNumber is int &&
+        data.moduleNumber >= 1 &&
+        data.status is string &&
+        data.status in validStatuses &&
+        // lessonPlan is optional — can be null or a map
+        (data.lessonPlan == null || data.lessonPlan is map) &&
+        data.lessonProgress is number &&
+        data.lessonProgress >= 0 &&
+        data.lessonProgress <= 100 &&
+        data.practiceEmaScore is number &&
+        data.practiceEmaScore >= 0 &&
+        data.practiceAnswerCount is int &&
+        data.practiceAnswerCount >= 0 &&
+        isValidStringList('moduleStrengths', 50, 200) &&
+        isValidStringList('moduleWeaknesses', 50, 200);
+    }
+
+    // =============================================================
+    // Access Rules
+    // =============================================================
+
+    // Default: deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Parents ---
+    match /parents/{parentId} {
+      // Parents can only read/write their own document
+      allow read: if isParent(parentId);
+
+      allow create: if isParent(parentId) &&
+        isValidParent();
+
+      allow update: if isParent(parentId) &&
+        isValidParent() &&
+        areImmutableFieldsUnchanged(['email', 'createdAt']);
+
+      allow delete: if isParent(parentId);
+
+      // --- Children (subcollection of parent) ---
+      match /children/{childId} {
+        allow read: if isParent(parentId);
+
+        allow create: if isParent(parentId) &&
+          isValidChild();
+
+        allow update: if isParent(parentId) &&
+          isValidChild() &&
+          areImmutableFieldsUnchanged(['createdAt']);
+
+        allow delete: if isParent(parentId);
+
+        // --- Subjects (subcollection of child) ---
+        match /subjects/{subjectId} {
+          allow read: if isParent(parentId);
+
+          allow create: if isParent(parentId) &&
+            isValidSubject();
+
+          allow update: if isParent(parentId) &&
+            isValidSubject();
+
+          allow delete: if isParent(parentId);
+
+          // --- Modules (subcollection of subject) ---
+          match /modules/{moduleId} {
+            allow read: if isParent(parentId);
+
+            allow create: if isParent(parentId) &&
+              isValidModule();
+
+            allow update: if isParent(parentId) &&
+              isValidModule();
+
+            allow delete: if isParent(parentId);
+          }
+        }
+      }
+    }
+  }
+}

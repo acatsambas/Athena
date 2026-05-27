@@ -1,0 +1,181 @@
+.container {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
+  border-bottom: 1px solid var(--color-primary-200);
+}
+
+.headerIcon {
+  font-size: var(--text-2xl);
+}
+
+.headerTitle {
+  font-family: var(--font-child);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-primary-800);
+  margin: 0;
+}
+
+.headerSubtitle {
+  font-size: var(--text-sm);
+  color: var(--color-primary-600);
+  margin: 0;
+}
+
+.contextBar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.contextLabel {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.contextText {
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Chat Area ── */
+.chatArea {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 180px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.bubble {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 85%;
+  animation: slideUp var(--transition-slow) ease both;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bubbleAi {
+  align-self: flex-start;
+}
+
+.bubbleStudent {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.avatarAi {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-100);
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+}
+
+.bubbleText {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-child);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.bubbleAi .bubbleText {
+  background-color: var(--color-bg);
+  border-bottom-left-radius: var(--space-1);
+}
+
+.bubbleStudent .bubbleText {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-bottom-right-radius: var(--space-1);
+}
+
+/* ── Typing Indicator ── */
+.typingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg);
+  border-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--space-1);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-muted);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ── Input Area ── */
+.inputArea {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.chatInput {
+  flex: 1;
+}
+
+.sendButton {
+  flex-shrink: 0;
+}
+
+.completeArea {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}

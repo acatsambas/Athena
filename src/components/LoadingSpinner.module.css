@@ -1,0 +1,63 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary));
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.message {
+  font-family: var(--font-child);
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Sizes ── */
+.sm .dot {
+  width: 8px;
+  height: 8px;
+}
+
+.sm .message {
+  font-size: var(--text-sm);
+}
+
+.md .dot {
+  width: 12px;
+  height: 12px;
+}
+
+.md .message {
+  font-size: var(--text-base);
+}
+
+.lg .dot {
+  width: 16px;
+  height: 16px;
+}
+
+.lg .message {
+  font-size: var(--text-lg);
+}

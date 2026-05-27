@@ -1,0 +1,78 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  min-width: 220px;
+}
+
+.statusArea {
+  margin-bottom: var(--space-1);
+}
+
+.statusIcon {
+  font-size: var(--text-xl);
+  display: inline-block;
+}
+
+.statusCompleted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-green);
+  color: var(--color-text-inverse);
+  font-size: var(--text-base);
+  font-weight: 800;
+}
+
+.statusUnlocked {
+  font-size: var(--text-2xl);
+}
+
+.numberBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary));
+  box-shadow: var(--shadow-md);
+}
+
+.numberText {
+  font-family: var(--font-child);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-text-inverse);
+  line-height: 1;
+}
+
+.moduleName {
+  font-family: var(--font-child);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  line-height: var(--leading-tight);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.lockedText {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  font-style: italic;
+}
