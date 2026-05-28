@@ -151,7 +151,6 @@ service cloud.firestore {
         data.currentLevel >= 1 &&
         data.currentLevel <= 8 &&
         data.emaScore is number &&
-        data.emaScore >= 0 &&
         data.totalAnswers is int &&
         data.totalAnswers >= 0 &&
         isValidStringList('strengths', 50, 200) &&
@@ -178,7 +177,6 @@ service cloud.firestore {
         data.lessonProgress >= 0 &&
         data.lessonProgress <= 100 &&
         data.practiceEmaScore is number &&
-        data.practiceEmaScore >= 0 &&
         data.practiceAnswerCount is int &&
         data.practiceAnswerCount >= 0 &&
         isValidStringList('moduleStrengths', 50, 200) &&
@@ -192,6 +190,20 @@ service cloud.firestore {
     // Default: deny everything
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // --- Child Logins (lookup collection for fast child login) ---
+    match /child_logins/{username} {
+      // Any authenticated user can read (needed for child login)
+      allow read: if isAuthenticated();
+
+      // Only the parent who owns this child can create/update
+      allow create, update: if isAuthenticated() &&
+        request.resource.data.parentId == request.auth.uid;
+
+      // Only the owning parent can delete
+      allow delete: if isAuthenticated() &&
+        resource.data.parentId == request.auth.uid;
     }
 
     // --- Parents ---

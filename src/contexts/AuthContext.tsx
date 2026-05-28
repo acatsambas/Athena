@@ -140,39 +140,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Log in a child by username and 6-digit PIN */
   const childLogin = useCallback(async (username: string, pin: string) => {
-    // Search all parents for a child with this username
-    const parentsRef = collection(db, 'parents');
-    const parentsSnapshot = await getDocs(parentsRef);
+    const normalizedUsername = username.toLowerCase().trim();
 
-    for (const parentDoc of parentsSnapshot.docs) {
-      const childrenRef = collection(db, 'parents', parentDoc.id, 'children');
-      const childQuery = query(childrenRef, where('username', '==', username.toLowerCase()));
+    // Strategy 1: Look up via the child_logins collection (fast, works for any user)
+    try {
+      const loginDocRef = doc(db, 'child_logins', normalizedUsername);
+      const loginSnap = await getDoc(loginDocRef);
+
+      if (loginSnap.exists()) {
+        const loginData = loginSnap.data();
+
+        // Verify PIN
+        if (loginData.pin !== pin) {
+          throw new Error('Incorrect PIN');
+        }
+
+        // Load the parent's AI model setting
+        if (typeof window !== 'undefined' && loginData.aiModel) {
+          localStorage.setItem('athena_ai_model', loginData.aiModel);
+        }
+
+        const session: ChildSession = {
+          childId: loginData.childId,
+          parentId: loginData.parentId,
+          firstName: loginData.firstName,
+          username: normalizedUsername,
+          yearOfBirth: loginData.yearOfBirth,
+          totalPoints: loginData.totalPoints || 0,
+        };
+
+        setChildSession(session);
+        setUserType('child');
+
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('athena_child_session', JSON.stringify(session));
+        }
+        return;
+      }
+    } catch (err: unknown) {
+      // If the error is about PIN, re-throw it
+      if (err instanceof Error && err.message === 'Incorrect PIN') {
+        throw err;
+      }
+      // Otherwise fall through to Strategy 2
+    }
+
+    // Strategy 2: If parent is logged in, search their children directly
+    if (user) {
+      const childrenRef = collection(db, 'parents', user.uid, 'children');
+      const childQuery = query(childrenRef, where('username', '==', normalizedUsername));
       const childSnapshot = await getDocs(childQuery);
 
       if (!childSnapshot.empty) {
         const childDoc = childSnapshot.docs[0];
         const childData = childDoc.data();
 
-        // Verify PIN (stored as simple hash for now)
         if (childData.pin !== pin) {
           throw new Error('Incorrect PIN');
         }
 
-        // Load the parent's AI model setting
-        const parentData = parentDoc.data();
-        if (typeof window !== 'undefined' && parentData.aiModel) {
+        // Load parent's AI model setting
+        const parentRef = doc(db, 'parents', user.uid);
+        const parentSnap = await getDoc(parentRef);
+        const parentData = parentSnap.data();
+        if (typeof window !== 'undefined' && parentData?.aiModel) {
           localStorage.setItem('athena_ai_model', parentData.aiModel);
         }
 
-        // Sign in as the parent (silently) to get Firestore access
-        // The parent's email/password are not stored here — child login
-        // requires the parent to have been logged in on this device before
-        // and their auth to still be active, OR we use a custom token approach.
-        // For now, child login works when parent is already authenticated.
-
         const session: ChildSession = {
           childId: childDoc.id,
-          parentId: parentDoc.id,
+          parentId: user.uid,
           firstName: childData.firstName,
           username: childData.username,
           yearOfBirth: childData.yearOfBirth,
@@ -182,16 +219,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setChildSession(session);
         setUserType('child');
 
-        // Persist to sessionStorage
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('athena_child_session', JSON.stringify(session));
+        }
+
+        // Also write the lookup document for future logins
+        try {
+          await setDoc(doc(db, 'child_logins', normalizedUsername), {
+            parentId: user.uid,
+            childId: childDoc.id,
+            firstName: childData.firstName,
+            yearOfBirth: childData.yearOfBirth,
+            pin: childData.pin,
+            aiModel: parentData?.aiModel || '',
+            totalPoints: childData.totalPoints || 0,
+          });
+        } catch {
+          // Non-critical — lookup doc creation is a nice-to-have
         }
         return;
       }
     }
 
-    throw new Error('Username not found');
-  }, []);
+    throw new Error('Username not found. Make sure a parent is logged in on this device.');
+  }, [user]);
 
   /** Log out the child (returns to parent view if parent is still authenticated) */
   const childLogout = useCallback(() => {

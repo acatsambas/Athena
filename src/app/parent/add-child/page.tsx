@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export default function AddChildPage() {
@@ -50,14 +50,31 @@ export default function AddChildPage() {
     setIsLoading(true);
 
     try {
+      const normalizedUsername = username.toLowerCase().trim();
+
+      // Create child under parent's subcollection
       const childrenRef = collection(db, 'parents', user.uid, 'children');
-      await addDoc(childrenRef, {
-        username: username.toLowerCase().trim(),
+      const childDocRef = await addDoc(childrenRef, {
+        username: normalizedUsername,
         firstName: firstName.trim(),
         yearOfBirth: year,
-        pin: pin, // In production, this should be hashed
+        pin: pin,
         totalPoints: 0,
         createdAt: serverTimestamp(),
+      });
+
+      // Also create a lookup document for fast child login
+      const parentSnap = await getDoc(doc(db, 'parents', user.uid));
+      const parentData = parentSnap.data();
+
+      await setDoc(doc(db, 'child_logins', normalizedUsername), {
+        parentId: user.uid,
+        childId: childDocRef.id,
+        firstName: firstName.trim(),
+        yearOfBirth: year,
+        pin: pin,
+        aiModel: parentData?.aiModel || '',
+        totalPoints: 0,
       });
 
       router.push('/parent');
