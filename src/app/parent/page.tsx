@@ -8,6 +8,7 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { generateContent } from '@/lib/ai-client';
@@ -86,6 +87,29 @@ export default function ParentDashboard() {
       }
 
       setChildren(childrenData);
+
+      // Auto-create child_logins lookup docs for any children missing them
+      const parentSnap = await getDoc(doc(db, 'parents', user.uid));
+      const parentData = parentSnap.data();
+      for (const child of childrenData) {
+        try {
+          const loginRef = doc(db, 'child_logins', child.username);
+          const loginSnap = await getDoc(loginRef);
+          if (!loginSnap.exists()) {
+            await setDoc(loginRef, {
+              parentId: user.uid,
+              childId: child.id,
+              firstName: child.firstName,
+              yearOfBirth: child.yearOfBirth,
+              pin: child.pin,
+              aiModel: parentData?.aiModel || '',
+              totalPoints: child.totalPoints || 0,
+            });
+          }
+        } catch {
+          // Non-critical
+        }
+      }
     } catch (err) {
       console.error('Failed to load children:', err);
     } finally {
