@@ -1519,3 +1519,106 @@ a:hover {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
+/* ─── Lesson Content (markdown rendering) ─── */
+.lesson-content {
+  font-size: var(--text-base);
+  color: var(--color-text);
+}
+
+.lesson-content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.lesson-content p:last-child {
+  margin-bottom: 0;
+}
+
+.lesson-content strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lesson-content em {
+  font-style: italic;
+}
+
+.lesson-content ul,
+.lesson-content ol {
+  margin: 0.75rem 0 1.25rem 0;
+  padding-left: 1.75rem;
+}
+
+.lesson-content ul {
+  list-style-type: disc;
+}
+
+.lesson-content ol {
+  list-style-type: decimal;
+}
+
+.lesson-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+  padding-left: 0.25rem;
+}
+
+.lesson-content li::marker {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.lesson-content h3,
+.lesson-content h4 {
+  margin: 1.5rem 0 0.75rem 0;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lesson-content h3 {
+  font-size: var(--text-lg);
+}
+
+.lesson-content h4 {
+  font-size: var(--text-base);
+}
+
+.lesson-content code {
+  background: var(--color-primary-50);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  color: var(--color-primary-700);
+}
+
+.lesson-content pre {
+  background: var(--color-neutral-900);
+  color: var(--color-neutral-50);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.lesson-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.lesson-content blockquote {
+  border-left: 4px solid var(--color-primary-200);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: var(--color-primary-50);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--color-text-secondary);
+}
+
+.lesson-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5rem 0;
+}

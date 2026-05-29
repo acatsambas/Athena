@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { marked } from 'marked';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -80,13 +81,12 @@ function normalizeSection(raw: Record<string, unknown>): LessonSection {
   return { title, content, knowledge_check };
 }
 
-/** Convert plain text content to formatted HTML paragraphs */
-function textToHtml(text: string): string {
+/** Convert markdown content to formatted HTML */
+function renderContent(text: string): string {
   if (!text) return '<p><em>No content available.</em></p>';
-  return text
-    .split(/\n\n+/)
-    .map(para => `<p>${para.replace(/\n/g, '<br/>')}</p>`)
-    .join('');
+  // Use marked to convert markdown to HTML
+  const html = marked.parse(text, { async: false, breaks: true }) as string;
+  return html;
 }
 
 export default function LearnPage() {
@@ -365,7 +365,7 @@ export default function LearnPage() {
                 className="lesson-content"
                 style={{ marginTop: '1rem', lineHeight: '1.8' }}
                 dangerouslySetInnerHTML={{
-                  __html: textToHtml(lessonPlan.sections[currentSection].content),
+                  __html: renderContent(lessonPlan.sections[currentSection].content),
                 }}
               />
 
@@ -380,13 +380,26 @@ export default function LearnPage() {
                   />
                 </div>
               ) : (
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: '2rem' }}
-                  onClick={handleNextSection}
-                >
-                  {currentSection < lessonPlan.sections.length - 1 ? 'Next →' : 'Complete Lesson ✓'}
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', alignItems: 'center' }}>
+                  {currentSection > 0 && (
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => {
+                        const prev = currentSection - 1;
+                        setCurrentSection(prev);
+                        saveProgress(prev);
+                      }}
+                    >
+                      ← Previous
+                    </button>
+                  )}
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleNextSection}
+                  >
+                    {currentSection < lessonPlan.sections.length - 1 ? 'Next →' : 'Complete Lesson ✓'}
+                  </button>
+                </div>
               )}
             </div>
 
