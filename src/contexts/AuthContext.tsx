@@ -5,6 +5,7 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInAnonymously,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
@@ -158,6 +159,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Load the parent's AI model setting
         if (typeof window !== 'undefined' && loginData.aiModel) {
           localStorage.setItem('athena_ai_model', loginData.aiModel);
+        }
+
+        // If no parent is logged in, sign in anonymously for Firestore access
+        if (!user) {
+          await signInAnonymously(auth);
         }
 
         const session: ChildSession = {

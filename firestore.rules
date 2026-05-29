@@ -194,8 +194,8 @@ service cloud.firestore {
 
     // --- Child Logins (lookup collection for fast child login) ---
     match /child_logins/{username} {
-      // Any authenticated user can read (needed for child login)
-      allow read: if isAuthenticated();
+      // Anyone can read (needed for child login without parent session)
+      allow read: if true;
 
       // Only the parent who owns this child can create/update
       allow create, update: if isAuthenticated() &&
@@ -222,12 +222,14 @@ service cloud.firestore {
 
       // --- Children (subcollection of parent) ---
       match /children/{childId} {
-        allow read: if isParent(parentId);
+        // Any authenticated user can read (needed for child session via anonymous auth)
+        allow read: if isAuthenticated();
 
         allow create: if isParent(parentId) &&
           isValidChild();
 
-        allow update: if isParent(parentId) &&
+        // Any authenticated user can update (child session updates points, etc.)
+        allow update: if isAuthenticated() &&
           isValidChild() &&
           areImmutableFieldsUnchanged(['createdAt']);
 
@@ -235,24 +237,25 @@ service cloud.firestore {
 
         // --- Subjects (subcollection of child) ---
         match /subjects/{subjectId} {
-          allow read: if isParent(parentId);
+          allow read: if isAuthenticated();
 
-          allow create: if isParent(parentId) &&
+          // Any authenticated user can create/update (child takes assessments, practices)
+          allow create: if isAuthenticated() &&
             isValidSubject();
 
-          allow update: if isParent(parentId) &&
+          allow update: if isAuthenticated() &&
             isValidSubject();
 
           allow delete: if isParent(parentId);
 
           // --- Modules (subcollection of subject) ---
           match /modules/{moduleId} {
-            allow read: if isParent(parentId);
+            allow read: if isAuthenticated();
 
-            allow create: if isParent(parentId) &&
+            allow create: if isAuthenticated() &&
               isValidModule();
 
-            allow update: if isParent(parentId) &&
+            allow update: if isAuthenticated() &&
               isValidModule();
 
             allow delete: if isParent(parentId);
