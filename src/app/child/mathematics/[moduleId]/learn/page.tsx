@@ -25,11 +25,68 @@ interface LessonSection {
     options?: string[];
     correct: string;
     expected_accuracy: number;
-  };
+  } | null;
 }
 
 interface LessonPlan {
   sections: LessonSection[];
+}
+
+/** Normalize an AI-generated section into our expected LessonSection shape */
+function normalizeSection(raw: Record<string, unknown>): LessonSection {
+  const title = (raw.title as string) || 'Untitled Section';
+  const content = (raw.content as string) || (raw.explanation as string) || (raw.text as string) || '';
+
+  // Handle knowledge_check which may come in different formats
+  let knowledge_check: LessonSection['knowledge_check'] = null;
+
+  const kc = raw.knowledge_check || raw.knowledgeCheck || raw.knowledge_Check;
+  if (kc && typeof kc === 'object' && kc !== null) {
+    const kcObj = kc as Record<string, unknown>;
+    // Handle correct answer: might be 'correct', or might need to derive from correctIndex + options
+    let correct = (kcObj.correct as string) || (kcObj.correctAnswer as string) || (kcObj.expectedAnswer as string) || '';
+    const options = (kcObj.options as string[]) || [];
+    if (!correct && typeof kcObj.correctIndex === 'number' && options.length > 0) {
+      correct = options[kcObj.correctIndex as number] || '';
+    }
+
+    knowledge_check = {
+      question: (kcObj.question as string) || '',
+      type: ((kcObj.type as string) === 'free_text' ? 'free_text' : 'multiple_choice'),
+      options: options.length > 0 ? options : undefined,
+      correct,
+      expected_accuracy: (kcObj.expected_accuracy as number) || (kcObj.expectedAccuracy as number) || 0.5,
+    };
+  }
+
+  // Also handle old format where question/options/correctIndex are top-level
+  if (!knowledge_check && raw.question && typeof raw.question === 'string') {
+    const options = (raw.options as string[]) || [];
+    let correct = '';
+    if (typeof raw.correctIndex === 'number' && options.length > 0) {
+      correct = options[raw.correctIndex as number] || '';
+    } else if (typeof raw.correctAnswer === 'string') {
+      correct = raw.correctAnswer;
+    }
+    knowledge_check = {
+      question: raw.question as string,
+      type: options.length > 0 ? 'multiple_choice' : 'free_text',
+      options: options.length > 0 ? options : undefined,
+      correct,
+      expected_accuracy: 0.5,
+    };
+  }
+
+  return { title, content, knowledge_check };
+}
+
+/** Convert plain text content to formatted HTML paragraphs */
+function textToHtml(text: string): string {
+  if (!text) return '<p><em>No content available.</em></p>';
+  return text
+    .split(/\n\n+/)
+    .map(para => `<p>${para.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
 }
 
 export default function LearnPage() {
@@ -83,11 +140,21 @@ export default function LearnPage() {
       const moduleData = moduleSnap.data() as ModuleProgress;
 
       if (moduleData.lessonPlan) {
-        // Lesson plan already exists — load it
-        setLessonPlan(moduleData.lessonPlan as unknown as LessonPlan);
-        setCurrentSection(moduleData.lessonProgress || 0);
-        setPhase('lesson');
-        return;
+        // Lesson plan already exists — load and normalize it
+        const cached = moduleData.lessonPlan as unknown as Record<string, unknown>;
+        const rawSections = (cached.sections || []) as Record<string, unknown>[];
+        const sections = rawSections.map(normalizeSection);
+
+        // If all sections have empty content, the cached plan is broken — regenerate
+        if (sections.length > 0 && sections.every(s => !s.content)) {
+          // Clear the broken cached plan and fall through to regeneration
+          await updateDoc(moduleRef, { lessonPlan: null, lessonProgress: 0 });
+        } else {
+          setLessonPlan({ sections });
+          setCurrentSection(moduleData.lessonProgress || 0);
+          setPhase('lesson');
+          return;
+        }
       }
 
       // Generate new lesson plan
@@ -109,10 +176,25 @@ export default function LearnPage() {
         staticModule.name
       );
 
-      const plan = await generateJSON<LessonPlan>(prompt);
-      if (!plan || !plan.sections || plan.sections.length === 0) {
-        throw new Error('Invalid lesson plan received from AI');
+      const raw = await generateJSON<Record<string, unknown>>(prompt);
+
+      // Normalize the response — handle different AI response structures
+      let sections: LessonSection[];
+      const rawSections = (raw.sections || raw.lessonPlan || raw.lesson) as Record<string, unknown>[] | undefined;
+
+      if (Array.isArray(rawSections)) {
+        sections = rawSections.map(normalizeSection);
+      } else if (Array.isArray(raw)) {
+        sections = (raw as Record<string, unknown>[]).map(normalizeSection);
+      } else {
+        throw new Error('Invalid lesson plan structure from AI');
       }
+
+      if (sections.length === 0) {
+        throw new Error('AI returned an empty lesson plan');
+      }
+
+      const plan: LessonPlan = { sections };
 
       // Save to Firestore
       await updateDoc(moduleRef, { lessonPlan: plan, lessonProgress: 0 });
@@ -283,8 +365,7 @@ export default function LearnPage() {
                 className="lesson-content"
                 style={{ marginTop: '1rem', lineHeight: '1.8' }}
                 dangerouslySetInnerHTML={{
-                  __html: lessonPlan.sections[currentSection].content
-                    + (lessonPlan.sections[currentSection].svg || ''),
+                  __html: textToHtml(lessonPlan.sections[currentSection].content),
                 }}
               />
 

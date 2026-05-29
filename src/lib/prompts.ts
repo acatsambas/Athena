@@ -103,21 +103,29 @@ Principles:
 - Use age-appropriate language.
 - Do not use garlic in any word problems involving food.
 
-Respond with valid JSON only. Use this schema:
+Respond with valid JSON only. Use this exact schema:
 {
-  "lessonTitle": "<title>",
   "sections": [
     {
-      "type": "explanation" | "knowledgeCheck",
       "title": "<section title>",
-      "content": "<markdown content, may include SVG>",
-      "question": "<optional, for knowledgeCheck type>",
-      "options": ["<optional, for multiple-choice checks>"],
-      "correctIndex": <optional, 0-based>,
-      "expectedAnswer": "<optional, for free-text checks>"
+      "content": "<lesson content as plain text with line breaks for paragraphs>",
+      "knowledge_check": null or {
+        "question": "<question text>",
+        "type": "multiple_choice" or "free_text",
+        "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
+        "correct": "<the exact text of the correct answer>",
+        "expected_accuracy": <0.0-1.0>
+      }
     }
   ]
-}`;
+}
+
+Important:
+- Each section MUST have a "content" field with the teaching content as plain text.
+- Sections without a knowledge check should have "knowledge_check": null.
+- Generate 4-6 sections alternating between teaching and knowledge checks.
+- Do NOT use markdown formatting in content — use plain text only.
+- Respond with ONLY the JSON object. No markdown, no explanation.`;
 }
 
 // ---------------------------------------------------------------------------
