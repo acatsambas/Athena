@@ -43,12 +43,32 @@ export default function AssessmentPage() {
 
     const generateQuestions = async () => {
       try {
+        // Check API key and provider are configured
+        const apiKey = typeof window !== 'undefined' ? localStorage.getItem('athena_api_key') : null;
+        const provider = typeof window !== 'undefined' ? localStorage.getItem('athena_ai_model') : null;
+
+        if (!apiKey) {
+          throw new Error(
+            'No API key found. A parent needs to log in on this device and set an API key in Settings first.'
+          );
+        }
+        if (!provider) {
+          throw new Error(
+            'No AI provider selected. A parent needs to log in and configure the AI provider in Settings.'
+          );
+        }
+
         const moduleNames = getOrderedModuleNames();
         const prompt = getAssessmentPrompt(childSession.yearOfBirth, moduleNames);
 
-        const result = await generateJSON<AssessmentQuestion[]>(prompt);
+        const raw = await generateJSON<AssessmentQuestion[] | { questions: AssessmentQuestion[] }>(prompt);
+
+        // Handle both bare array and wrapped { questions: [...] } responses
+        const result = Array.isArray(raw) ? raw : (raw as { questions: AssessmentQuestion[] }).questions;
+
         if (!Array.isArray(result) || result.length === 0) {
-          throw new Error('Invalid response from AI');
+          console.error('AI response was not a valid array:', raw);
+          throw new Error('AI returned an empty or invalid response. Please try again.');
         }
 
         setQuestions(result);

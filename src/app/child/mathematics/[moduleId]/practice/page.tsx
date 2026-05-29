@@ -84,9 +84,10 @@ export default function PracticePage() {
         moduleData?.moduleWeaknesses || []
       );
 
-      const result = await generateJSON<PracticeQuestion[]>(prompt);
+      const raw = await generateJSON<PracticeQuestion[] | { questions: PracticeQuestion[] }>(prompt);
+      const result = Array.isArray(raw) ? raw : (raw as { questions: PracticeQuestion[] }).questions;
       if (!Array.isArray(result) || result.length === 0) {
-        throw new Error('Invalid response from AI');
+        throw new Error('AI returned an empty or invalid response. Please try again.');
       }
 
       setQuestions(result);

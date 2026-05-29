@@ -30,23 +30,24 @@ export function getAssessmentPrompt(
 
 Rules:
 - Start with questions appropriate for the youngest age group and increase difficulty.
-- Ask enough questions per topic to make a reliable placement judgment.
-- Stop a topic's questions early if the child is clearly not yet at that level.
-- Each question must have exactly 4 answer options, with one correct answer.
+- Generate 2-3 questions per topic to make a reliable placement judgment.
+- Each question must have exactly 4 answer options labelled A, B, C, D.
 - Questions should be clear, unambiguous, and age-appropriate in language.
 - Do not explain answers during the assessment.
+- Generate at least 15 questions total.
 
-Respond with valid JSON only. Use this schema:
-{
-  "questions": [
-    {
-      "module": "<module name>",
-      "question": "<question text>",
-      "options": ["A", "B", "C", "D"],
-      "correctIndex": <0-3>
-    }
-  ]
-}`;
+Respond with a JSON array only (no wrapper object). Use this exact schema:
+[
+  {
+    "module": "<module name, must match one from the list above>",
+    "question": "<question text>",
+    "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
+    "correct": "<the exact text of the correct option>",
+    "expected_accuracy": <0.0-1.0, estimated probability a child of this age gets this right>
+  }
+]
+
+Respond with ONLY the JSON array. No markdown, no explanation, no wrapper object.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,21 +172,19 @@ Rules:
 - Questions should be varied and not repetitive.
 - Use age-appropriate language.
 
-Respond with valid JSON only. Use this schema:
-{
-  "questions": [
-    {
-      "id": <1-10>,
-      "type": "multipleChoice" | "freeText",
-      "question": "<question text>",
-      "options": ["<for multipleChoice only>"],
-      "correctIndex": <0-based, for multipleChoice only>,
-      "correctAnswer": "<expected answer text>",
-      "expectedAccuracy": <0.0-1.0, estimated probability the child gets this right>,
-      "topic": "<sub-topic within the module>"
-    }
-  ]
-}`;
+Respond with a JSON array only (no wrapper object). Use this exact schema:
+[
+  {
+    "type": "multiple_choice" or "free_text",
+    "question": "<question text>",
+    "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
+    "correct": "<the exact text of the correct answer>",
+    "expected_accuracy": <0.0-1.0, estimated probability the child gets this right>
+  }
+]
+
+For free_text questions, omit the "options" field.
+Respond with ONLY the JSON array. No markdown, no explanation, no wrapper object.`;
 }
 
 // ---------------------------------------------------------------------------
