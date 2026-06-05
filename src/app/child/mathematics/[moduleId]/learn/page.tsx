@@ -482,14 +482,21 @@ export default function LearnPage() {
               onComplete={() => handleNextSection()}
               generateResponse={async (message: string) => {
                 const resp = await generateContent(
-                  `A student (born ${childSession.yearOfBirth}) answered a maths question incorrectly.
+                  `You are a friendly maths tutor talking directly to a child born in ${childSession.yearOfBirth}. Keep your response SHORT (3-5 sentences max).
 
-Question: ${diagnosticQuestion}
-Their answer: ${diagnosticStudentAnswer}
-Correct answer: ${diagnosticCorrectAnswer}
-Their explanation of their reasoning: "${message}"
+The child got this question wrong:
+Question: "${diagnosticQuestion}"
+They answered: "${diagnosticStudentAnswer}"
+The correct answer is: "${diagnosticCorrectAnswer}"
+Their explanation: "${message}"
 
-Identify their specific misconception. Explain clearly what went wrong and why the correct answer is right. Be constructive and use age-appropriate language.`
+Rules:
+- Talk directly to the child in simple, encouraging language.
+- Briefly explain what the correct answer is and why.
+- Do NOT analyse or critique the question itself.
+- Do NOT show your reasoning process.
+- Do NOT use headers, sections, or long explanations.
+- End with a short word of encouragement.`
                 );
                 return resp;
               }}

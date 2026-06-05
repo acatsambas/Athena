@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { marked } from 'marked';
 import styles from './DiagnosticChat.module.css';
 
 interface ChatMessage {
@@ -93,7 +94,14 @@ export default function DiagnosticChat({
             }`}
           >
             {msg.role === 'ai' && <span className={styles.avatarAi}>🦉</span>}
-            <p className={styles.bubbleText}>{msg.text}</p>
+            {msg.role === 'ai' ? (
+              <div
+                className={`${styles.bubbleText} lesson-content`}
+                dangerouslySetInnerHTML={{ __html: marked.parse(msg.text, { async: false, breaks: true }) as string }}
+              />
+            ) : (
+              <p className={styles.bubbleText}>{msg.text}</p>
+            )}
           </div>
         ))}
 
