@@ -23,6 +23,30 @@ interface PracticeQuestion {
   expected_accuracy: number;
 }
 
+/** Normalize AI response into our expected PracticeQuestion shape */
+function normalizePracticeQuestion(raw: Record<string, unknown>): PracticeQuestion {
+  const options = (raw.options as string[]) || [];
+
+  // Normalize type: AI may return multipleChoice, multiple_choice, freeText, free_text
+  const rawType = (raw.type as string) || '';
+  const type: PracticeQuestion['type'] =
+    rawType.includes('free') || rawType.includes('Free') ? 'free_text' : 'multiple_choice';
+
+  // Normalize correct answer: may be correct, correctAnswer, or derived from correctIndex
+  let correct = (raw.correct as string) || (raw.correctAnswer as string) || '';
+  if (!correct && typeof raw.correctIndex === 'number' && options.length > 0) {
+    correct = options[raw.correctIndex as number] || '';
+  }
+
+  return {
+    type,
+    question: (raw.question as string) || '',
+    options: options.length > 0 ? options : undefined,
+    correct,
+    expected_accuracy: (raw.expected_accuracy as number) || (raw.expectedAccuracy as number) || 0.5,
+  };
+}
+
 export default function PracticePage() {
   const { user, loading, userType, childSession } = useAuth();
   const router = useRouter();
@@ -84,12 +108,13 @@ export default function PracticePage() {
         moduleData?.moduleWeaknesses || []
       );
 
-      const raw = await generateJSON<PracticeQuestion[] | { questions: PracticeQuestion[] }>(prompt);
-      const result = Array.isArray(raw) ? raw : (raw as { questions: PracticeQuestion[] }).questions;
-      if (!Array.isArray(result) || result.length === 0) {
+      const raw = await generateJSON<Record<string, unknown>[] | { questions: Record<string, unknown>[] }>(prompt);
+      const rawArr = Array.isArray(raw) ? raw : (raw as { questions: Record<string, unknown>[] }).questions;
+      if (!Array.isArray(rawArr) || rawArr.length === 0) {
         throw new Error('AI returned an empty or invalid response. Please try again.');
       }
 
+      const result = rawArr.map(normalizePracticeQuestion);
       setQuestions(result);
       setPhase('answering');
     } catch (err) {

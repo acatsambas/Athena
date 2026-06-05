@@ -21,6 +21,24 @@ interface AssessmentQuestion {
   expected_accuracy: number;
 }
 
+/** Normalize AI response into our expected AssessmentQuestion shape */
+function normalizeAssessmentQuestion(raw: Record<string, unknown>): AssessmentQuestion {
+  const options = (raw.options as string[]) || [];
+
+  let correct = (raw.correct as string) || (raw.correctAnswer as string) || '';
+  if (!correct && typeof raw.correctIndex === 'number' && options.length > 0) {
+    correct = options[raw.correctIndex as number] || '';
+  }
+
+  return {
+    module: (raw.module as string) || 'Unknown',
+    question: (raw.question as string) || '',
+    options,
+    correct,
+    expected_accuracy: (raw.expected_accuracy as number) || (raw.expectedAccuracy as number) || 0.5,
+  };
+}
+
 export default function AssessmentPage() {
   const { user, loading, userType, childSession } = useAuth();
   const router = useRouter();
@@ -61,16 +79,17 @@ export default function AssessmentPage() {
         const moduleNames = getOrderedModuleNames();
         const prompt = getAssessmentPrompt(childSession.yearOfBirth, moduleNames);
 
-        const raw = await generateJSON<AssessmentQuestion[] | { questions: AssessmentQuestion[] }>(prompt);
+        const raw = await generateJSON<Record<string, unknown>[] | { questions: Record<string, unknown>[] }>(prompt);
 
         // Handle both bare array and wrapped { questions: [...] } responses
-        const result = Array.isArray(raw) ? raw : (raw as { questions: AssessmentQuestion[] }).questions;
+        const rawArr = Array.isArray(raw) ? raw : (raw as { questions: Record<string, unknown>[] }).questions;
 
-        if (!Array.isArray(result) || result.length === 0) {
+        if (!Array.isArray(rawArr) || rawArr.length === 0) {
           console.error('AI response was not a valid array:', raw);
           throw new Error('AI returned an empty or invalid response. Please try again.');
         }
 
+        const result = rawArr.map(normalizeAssessmentQuestion);
         setQuestions(result);
         setPhase('ready');
       } catch (err) {
