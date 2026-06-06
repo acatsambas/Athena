@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ModuleProgress } from '@/lib/firestore-schema';
 import { MATH_MODULES } from '@/data/mathematics-modules';
@@ -39,11 +39,21 @@ export default function MathematicsPage() {
       );
       const snap = await getDocs(modulesRef);
       const data = snap.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as ModuleProgress),
+        .map((d) => ({
+          id: d.id,
+          ...(d.data() as ModuleProgress),
         }))
         .sort((a, b) => a.moduleNumber - b.moduleNumber);
+
+      // Auto-fix: if a module is completed but the next one is locked, unlock it
+      for (let i = 0; i < data.length - 1; i++) {
+        if (data[i].status === 'completed' && data[i + 1].status === 'locked') {
+          const nextModuleRef = doc(modulesRef, data[i + 1].id);
+          await updateDoc(nextModuleRef, { status: 'unlocked' });
+          data[i + 1].status = 'unlocked';
+        }
+      }
+
       setModules(data);
     } catch (err) {
       console.error('Failed to load modules:', err);
