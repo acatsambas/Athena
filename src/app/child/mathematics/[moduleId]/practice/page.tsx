@@ -7,7 +7,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { generateJSON, generateContent } from '@/lib/ai-client';
 import { getPracticePrompt } from '@/lib/prompts';
-import { getModuleById } from '@/data/mathematics-modules';
+import { getModuleById, MATH_MODULES } from '@/data/mathematics-modules';
 import { calculateAdjustedAnswer, updateEMA, emaToLevel, isModuleComplete } from '@/lib/scoring';
 import type { SubjectProgress, ModuleProgress } from '@/lib/firestore-schema';
 import QuestionCard from '@/components/QuestionCard';
@@ -238,21 +238,23 @@ export default function PracticePage() {
 
       // If module completed, unlock next module
       if (completed && staticModule) {
-        const nextModuleId = `module-${staticModule.number + 1}`;
-        const nextModuleRef = doc(
-          db,
-          'parents', childSession.parentId,
-          'children', childSession.childId,
-          'subjects', 'mathematics',
-          'modules', nextModuleId
-        );
-        try {
-          const nextSnap = await getDoc(nextModuleRef);
-          if (nextSnap.exists() && nextSnap.data()?.status === 'locked') {
-            await updateDoc(nextModuleRef, { status: 'unlocked' });
+        const nextModule = MATH_MODULES.find(m => m.number === staticModule.number + 1);
+        if (nextModule) {
+          const nextModuleRef = doc(
+            db,
+            'parents', childSession.parentId,
+            'children', childSession.childId,
+            'subjects', 'mathematics',
+            'modules', nextModule.id
+          );
+          try {
+            const nextSnap = await getDoc(nextModuleRef);
+            if (nextSnap.exists() && nextSnap.data()?.status === 'locked') {
+              await updateDoc(nextModuleRef, { status: 'unlocked' });
+            }
+          } catch {
+            // Next module might not exist (last module)
           }
-        } catch {
-          // Next module might not exist (last module)
         }
       }
 
