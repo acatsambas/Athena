@@ -80,6 +80,14 @@ export default function ModuleCard({ module: mod, onLearn, onPractice }: ModuleC
       {mod.status === 'completed' && (
         <div className={styles.actions}>
           <button
+            id={`module-${mod.number}-review`}
+            type="button"
+            className="btn btn-outline"
+            onClick={onLearn}
+          >
+            Review Lesson
+          </button>
+          <button
             id={`module-${mod.number}-practice`}
             type="button"
             className="btn btn-secondary"
