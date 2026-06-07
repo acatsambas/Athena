@@ -23,7 +23,7 @@ interface LessonSection {
   knowledge_check?: {
     question: string;
     type: 'multiple_choice' | 'free_text';
-    options?: string[];
+    options?: string[] | null;
     correct: string;
     expected_accuracy: number;
   } | null;
@@ -54,7 +54,7 @@ function normalizeSection(raw: Record<string, unknown>): LessonSection {
     knowledge_check = {
       question: (kcObj.question as string) || '',
       type: ((kcObj.type as string) === 'free_text' ? 'free_text' : 'multiple_choice'),
-      options: options.length > 0 ? options : undefined,
+      options: options.length > 0 ? options : null,
       correct,
       expected_accuracy: (kcObj.expected_accuracy as number) || (kcObj.expectedAccuracy as number) || 0.5,
     };
@@ -72,7 +72,7 @@ function normalizeSection(raw: Record<string, unknown>): LessonSection {
     knowledge_check = {
       question: raw.question as string,
       type: options.length > 0 ? 'multiple_choice' : 'free_text',
-      options: options.length > 0 ? options : undefined,
+      options: options.length > 0 ? options : null,
       correct,
       expected_accuracy: 0.5,
     };
