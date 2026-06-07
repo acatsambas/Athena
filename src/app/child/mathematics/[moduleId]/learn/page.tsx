@@ -375,7 +375,7 @@ export default function LearnPage() {
                   <QuestionCard
                     question={lessonPlan.sections[currentSection].knowledge_check.question}
                     type={lessonPlan.sections[currentSection].knowledge_check.type || 'multiple_choice'}
-                    options={lessonPlan.sections[currentSection].knowledge_check.options}
+                    options={lessonPlan.sections[currentSection].knowledge_check.options ?? undefined}
                     onAnswer={handleKnowledgeCheckAnswer}
                   />
                 </div>
