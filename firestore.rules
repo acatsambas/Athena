@@ -160,12 +160,10 @@ service cloud.firestore {
     // Validate ModuleProgress document
     function isValidModule() {
       let data = request.resource.data;
-      let allowedFields = ['moduleName', 'moduleNumber', 'status', 'lessonPlan', 'lessonProgress', 'practiceEmaScore', 'practiceAnswerCount', 'moduleStrengths', 'moduleWeaknesses'];
-      let requiredFields = ['moduleName', 'moduleNumber', 'status', 'lessonProgress', 'practiceEmaScore', 'practiceAnswerCount', 'moduleStrengths', 'moduleWeaknesses'];
+      let allowedFields = ['moduleName', 'moduleNumber', 'status', 'lessonPlan', 'lessonProgress', 'practiceEmaScore', 'practiceAnswerCount', 'practiceCorrectCount', 'moduleStrengths', 'moduleWeaknesses'];
       let validStatuses = ['locked', 'unlocked', 'completed'];
 
       return hasOnlyAllowedFields(allowedFields) &&
-        hasRequiredFields(requiredFields) &&
         validString('moduleName', 1, 200) &&
         data.moduleNumber is int &&
         data.moduleNumber >= 1 &&
@@ -175,10 +173,11 @@ service cloud.firestore {
         (data.lessonPlan == null || data.lessonPlan is map) &&
         data.lessonProgress is number &&
         data.lessonProgress >= 0 &&
-        data.lessonProgress <= 100 &&
         data.practiceEmaScore is number &&
         data.practiceAnswerCount is int &&
         data.practiceAnswerCount >= 0 &&
+        // practiceCorrectCount is optional for backwards compat
+        (!('practiceCorrectCount' in data) || (data.practiceCorrectCount is int && data.practiceCorrectCount >= 0)) &&
         isValidStringList('moduleStrengths', 50, 200) &&
         isValidStringList('moduleWeaknesses', 50, 200);
     }

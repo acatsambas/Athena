@@ -200,11 +200,13 @@ export default function PracticePage() {
       }
 
       const newAnswerCount = (moduleData?.practiceAnswerCount || 0) + allResults.length;
+      const newCorrectCount = (moduleData?.practiceCorrectCount || 0) + allResults.filter(r => r.correct).length;
       const completed = isModuleComplete(ema, newAnswerCount);
 
       const updateData: Record<string, unknown> = {
         practiceEmaScore: ema,
         practiceAnswerCount: newAnswerCount,
+        practiceCorrectCount: newCorrectCount,
       };
 
       if (completed && moduleData?.status !== 'completed') {

@@ -231,6 +231,7 @@ export default function AssessmentPage() {
           lessonProgress: 0,
           practiceEmaScore: 0,
           practiceAnswerCount: 0,
+          practiceCorrectCount: 0,
           moduleStrengths: [],
           moduleWeaknesses: [],
         });

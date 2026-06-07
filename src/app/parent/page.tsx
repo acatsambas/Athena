@@ -367,7 +367,7 @@ Keep the summary concise (3-5 paragraphs).`;
                                     </span>
                                     <span>
                                       {mod.practiceAnswerCount > 0
-                                        ? `${(mod.practiceEmaScore * 100).toFixed(0)}%`
+                                        ? `${Math.round(((mod as ModuleProgress & { practiceCorrectCount?: number }).practiceCorrectCount || 0) / mod.practiceAnswerCount * 100)}%`
                                         : '—'}
                                     </span>
                                   </div>

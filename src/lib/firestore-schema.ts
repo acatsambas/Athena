@@ -107,6 +107,8 @@ export interface ModuleProgress {
   practiceEmaScore: number;
   /** Number of practice answers submitted in this module */
   practiceAnswerCount: number;
+  /** Number of correct practice answers in this module */
+  practiceCorrectCount: number;
   /** Module-specific strengths identified during practice */
   moduleStrengths: string[];
   /** Module-specific weaknesses identified during practice */
