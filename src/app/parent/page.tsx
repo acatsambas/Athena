@@ -136,12 +136,18 @@ export default function ParentDashboard() {
         totalAnswers: s.totalAnswers,
         strengths: s.strengths,
         weaknesses: s.weaknesses,
-        modules: s.modules.map((m) => ({
-          name: m.moduleName,
-          status: m.status,
-          practiceScore: m.practiceEmaScore,
-          practiceCount: m.practiceAnswerCount,
-        })),
+        modules: s.modules.map((m) => {
+          const correctCount = (m as ModuleProgress & { practiceCorrectCount?: number }).practiceCorrectCount;
+          const pct = (correctCount != null && m.practiceAnswerCount > 0)
+            ? Math.round(correctCount / m.practiceAnswerCount * 100)
+            : null;
+          return {
+            name: m.moduleName,
+            status: m.status,
+            practicePercentCorrect: pct,
+            practiceCount: m.practiceAnswerCount,
+          };
+        }),
       }));
 
       const prompt = `You are generating a parent-facing performance summary for a child using an AI tutor.
@@ -367,7 +373,12 @@ Keep the summary concise (3-5 paragraphs).`;
                                     </span>
                                     <span>
                                       {mod.practiceAnswerCount > 0
-                                        ? `${Math.round(((mod as ModuleProgress & { practiceCorrectCount?: number }).practiceCorrectCount || 0) / mod.practiceAnswerCount * 100)}%`
+                                        ? (() => {
+                                            const cc = (mod as ModuleProgress & { practiceCorrectCount?: number }).practiceCorrectCount;
+                                            return cc != null
+                                              ? `${Math.round(cc / mod.practiceAnswerCount * 100)}%`
+                                              : `${mod.practiceAnswerCount} answered`;
+                                          })()
                                         : '—'}
                                     </span>
                                   </div>
