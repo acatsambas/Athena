@@ -134,9 +134,36 @@ export default function PracticePage() {
     if (!childSession) return;
 
     const question = questions[currentIndex];
-    const isCorrect =
-      answer.toLowerCase().trim() === question.correct.toLowerCase().trim() ||
-      answer.toUpperCase() === question.correct.toUpperCase();
+
+    let isCorrect: boolean;
+
+    if (question.type === 'multiple_choice') {
+      // Multiple choice: exact match is fine
+      isCorrect =
+        answer.toLowerCase().trim() === question.correct.toLowerCase().trim() ||
+        answer.toUpperCase() === question.correct.toUpperCase();
+    } else {
+      // Free text: use AI to evaluate — handles working, alternative forms, etc.
+      try {
+        const evaluation = await generateContent(
+          `You are marking a maths answer. Reply with ONLY the word "correct" or "incorrect" — nothing else.
+
+Question: "${question.question}"
+Expected answer: "${question.correct}"
+Student's answer: "${answer}"
+
+Rules:
+- If the student's answer contains the correct final answer (even with working shown), reply "correct".
+- Accept reasonable alternative forms (e.g. "92", "= 92", "23 × 4 = 92", "the answer is 92").
+- Do NOT penalise for showing working.
+- Only reply "incorrect" if the final answer is mathematically wrong.`
+        );
+        isCorrect = evaluation.trim().toLowerCase().startsWith('correct');
+      } catch {
+        // Fall back to string match if AI fails
+        isCorrect = answer.toLowerCase().trim() === question.correct.toLowerCase().trim();
+      }
+    }
 
     const newResults = [...results, { correct: isCorrect, expectedAccuracy: question.expected_accuracy }];
     setResults(newResults);

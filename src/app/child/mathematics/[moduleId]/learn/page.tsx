@@ -233,9 +233,31 @@ export default function LearnPage() {
     const section = lessonPlan.sections[currentSection];
     if (!section.knowledge_check) return;
 
-    const isCorrect =
-      answer.toLowerCase().trim() === section.knowledge_check.correct.toLowerCase().trim() ||
-      answer.toUpperCase() === section.knowledge_check.correct.toUpperCase();
+    let isCorrect: boolean;
+    if (section.knowledge_check.type === 'multiple_choice') {
+      isCorrect =
+        answer.toLowerCase().trim() === section.knowledge_check.correct.toLowerCase().trim() ||
+        answer.toUpperCase() === section.knowledge_check.correct.toUpperCase();
+    } else {
+      try {
+        const evaluation = await generateContent(
+          `You are marking a maths answer. Reply with ONLY the word "correct" or "incorrect" — nothing else.
+
+Question: "${section.knowledge_check.question}"
+Expected answer: "${section.knowledge_check.correct}"
+Student's answer: "${answer}"
+
+Rules:
+- If the student's answer contains the correct final answer (even with working shown), reply "correct".
+- Accept reasonable alternative forms (e.g. "92", "= 92", "23 × 4 = 92", "the answer is 92").
+- Do NOT penalise for showing working.
+- Only reply "incorrect" if the final answer is mathematically wrong.`
+        );
+        isCorrect = evaluation.trim().toLowerCase().startsWith('correct');
+      } catch {
+        isCorrect = answer.toLowerCase().trim() === section.knowledge_check.correct.toLowerCase().trim();
+      }
+    }
 
     if (isCorrect) {
       // Award point
