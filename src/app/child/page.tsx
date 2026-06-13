@@ -15,7 +15,7 @@ interface SubjectData extends SubjectProgress {
 }
 
 export default function ChildDashboard() {
-  const { user, loading, userType, childSession, childLogout, signOut } = useAuth();
+  const { user, loading, userType, childSession, childLogout, signOut, refreshChildPoints } = useAuth();
   const router = useRouter();
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
@@ -52,8 +52,11 @@ export default function ChildDashboard() {
   }, [childSession]);
 
   useEffect(() => {
-    if (childSession) loadSubjects();
-  }, [childSession, loadSubjects]);
+    if (childSession) {
+      loadSubjects();
+      refreshChildPoints();
+    }
+  }, [childSession, loadSubjects, refreshChildPoints]);
 
   const handleLogout = async () => {
     childLogout();

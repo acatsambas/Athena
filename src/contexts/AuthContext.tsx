@@ -49,6 +49,7 @@ interface AuthContextType {
   // Child session methods
   childLogin: (username: string, pin: string) => Promise<void>;
   childLogout: () => void;
+  refreshChildPoints: () => Promise<void>;
 
   // API key management (localStorage only)
   getApiKey: () => string | null;
@@ -259,6 +260,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
+  /** Re-fetch totalPoints from Firestore and update in-memory childSession */
+  const refreshChildPoints = useCallback(async () => {
+    if (!childSession) return;
+    const childRef = doc(db, 'parents', childSession.parentId, 'children', childSession.childId);
+    const snap = await getDoc(childRef);
+    const fresh = snap.data()?.totalPoints ?? childSession.totalPoints;
+    setChildSession((prev) => prev ? { ...prev, totalPoints: fresh } : prev);
+  }, [childSession]);
+
   /** Get API key from localStorage */
   const getApiKey = useCallback(() => {
     if (typeof window === 'undefined') return null;
@@ -295,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut: signOutHandler,
     childLogin,
     childLogout,
+    refreshChildPoints,
     getApiKey,
     setApiKey,
     getAiModel,
