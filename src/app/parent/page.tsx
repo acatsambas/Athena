@@ -129,10 +129,16 @@ export default function ParentDashboard() {
 
     setLoadingSummary(child.id);
     try {
+      const getLevelLabel = (level: number) => {
+        if (level <= 2) return 'Below expectations';
+        if (level <= 5) return 'On track';
+        return 'Above expectations';
+      };
+
       const subjectData = child.subjects.map((s) => ({
         subject: s.id,
         level: s.currentLevel,
-        emaScore: s.emaScore,
+        levelLabel: getLevelLabel(s.currentLevel),
         totalAnswers: s.totalAnswers,
         strengths: s.strengths,
         weaknesses: s.weaknesses,
@@ -144,8 +150,8 @@ export default function ParentDashboard() {
           return {
             name: m.moduleName,
             status: m.status,
-            practicePercentCorrect: pct,
-            practiceCount: m.practiceAnswerCount,
+            practicePercentCorrect: pct != null ? `${pct}%` : 'no score data yet',
+            questionsAnswered: m.practiceAnswerCount,
           };
         }),
       }));
@@ -158,14 +164,20 @@ Total points: ${child.totalPoints}
 Subject data:
 ${JSON.stringify(subjectData, null, 2)}
 
-Generate an accurate, non-sycophantic summary. Report on:
+Key for interpreting data:
+- "level" is the child's current ability level from 1 (lowest) to 8 (highest).
+- "levelLabel" is a human-readable label: "Below expectations", "On track", or "Above expectations".
+- "practicePercentCorrect" is the actual percentage of questions answered correctly.
+- "status" is either "completed" (mastered), "unlocked" (currently working on), or "locked" (not yet reached).
+- Modules with status "completed" but "no score data yet" were completed before tracking was added — do NOT report them as failing.
+
+Generate an accurate, constructive summary for the parent. Report on:
 1. Overall progress and current ability level
 2. Specific strengths demonstrated
 3. Areas needing improvement
 4. Recommendations for next steps
 
-Be honest and constructive. Do not default to positive framing if the data does not support it.
-Keep the summary concise (3-5 paragraphs).`;
+Be honest and encouraging. Keep the summary concise (3-5 paragraphs). Do NOT reference any internal scores, EMA values, or raw numbers — speak in plain parent-friendly language.`;
 
       const summary = await generateContent(prompt);
       setChildren((prev) =>
