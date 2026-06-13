@@ -169,7 +169,7 @@ Child profile:
 - Demonstrated strengths: ${strengthsStr}
 - Areas of difficulty: ${weaknessesStr}
 
-Task: Generate a set of 10 practice questions for ${moduleName}.
+Task: Generate a set of 5 practice questions for ${moduleName}.
 
 Rules:
 - Mix question formats: multiple-choice and short free-text answers.
