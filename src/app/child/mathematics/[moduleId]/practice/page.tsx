@@ -311,6 +311,7 @@ export default function PracticePage() {
 
             <div style={{ marginTop: '2rem' }}>
               <QuestionCard
+                key={currentIndex}
                 question={questions[currentIndex].question}
                 type={questions[currentIndex].type}
                 options={questions[currentIndex].options}

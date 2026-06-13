@@ -22,14 +22,16 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [freeTextValue, setFreeTextValue] = useState('');
+  const [answered, setAnswered] = useState(false);
 
   const handleOptionClick = useCallback(
     (option: string) => {
-      if (disabled) return;
+      if (disabled || answered) return;
+      setAnswered(true);
       setSelectedOption(option);
       onAnswer(option);
     },
-    [disabled, onAnswer]
+    [disabled, answered, onAnswer]
   );
 
   const handleFreeTextSubmit = useCallback(

@@ -373,6 +373,7 @@ export default function LearnPage() {
                 <div style={{ marginTop: '2rem' }}>
                   <h3>Knowledge Check</h3>
                   <QuestionCard
+                    key={currentSection}
                     question={lessonPlan.sections[currentSection].knowledge_check.question}
                     type={lessonPlan.sections[currentSection].knowledge_check.type || 'multiple_choice'}
                     options={lessonPlan.sections[currentSection].knowledge_check.options ?? undefined}
