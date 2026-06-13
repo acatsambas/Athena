@@ -295,6 +295,7 @@ export default function AssessmentPage() {
             </div>
 
             <QuestionCard
+              key={currentIndex}
               question={questions[currentIndex].question}
               type="multiple_choice"
               options={questions[currentIndex].options}
