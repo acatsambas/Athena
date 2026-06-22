@@ -68,17 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
-
-      if (!firebaseUser) {
-        setChildSession(null);
-        setUserType(null);
-      }
-    });
-
-    // Restore child session from sessionStorage
+    // Restore child session from sessionStorage first, before auth listener fires
+    let restoredChildSession = false;
     if (typeof window !== 'undefined') {
       const savedChild = sessionStorage.getItem('athena_child_session');
       if (savedChild) {
@@ -86,11 +77,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(savedChild);
           setChildSession(parsed);
           setUserType('child');
+          restoredChildSession = true;
         } catch {
           sessionStorage.removeItem('athena_child_session');
         }
       }
     }
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+
+      if (!firebaseUser) {
+        // Only clear child session if there is no persisted session in
+        // sessionStorage.  During anonymous-auth token refreshes,
+        // onAuthStateChanged can briefly fire with null before
+        // re-authenticating — clearing the session here would destroy
+        // an active child login and cause lesson pages to redirect.
+        const persisted =
+          typeof window !== 'undefined' &&
+          sessionStorage.getItem('athena_child_session');
+        if (!persisted) {
+          setChildSession(null);
+          setUserType(null);
+        }
+      }
+    });
 
     return () => unsubscribe();
   }, []);

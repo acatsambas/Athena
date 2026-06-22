@@ -24,23 +24,26 @@ export function getAssessmentPrompt(
   yearOfBirth: number,
   moduleList: string[]
 ): string {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - yearOfBirth;
   const orderedModuleList = moduleList.join(", ");
 
-  return `You are an AI tutor assessing a child's current mathematics ability. The child was born in ${yearOfBirth}. Generate a sequence of multiple-choice questions to assess their knowledge across the following mathematics topics, in order: ${orderedModuleList}.
+  return `You are an AI tutor assessing a child's current mathematics ability. The child is ${age} years old (born ${yearOfBirth}). Generate a sequence of multiple-choice questions to assess their knowledge across the following mathematics topics, in order: ${orderedModuleList}.
 
 Rules:
 - Start with questions appropriate for the youngest age group and increase difficulty.
 - Generate 2-3 questions per topic to make a reliable placement judgment.
 - Each question must have exactly 4 answer options labelled A, B, C, D.
-- Questions should be clear, unambiguous, and age-appropriate in language.
+- Questions MUST use simple, age-appropriate language for a ${age}-year-old. Keep question text short and clear.
 - Do not explain answers during the assessment.
 - Generate at least 15 questions total.
+- Do not use garlic in any word problems involving food.
 
 Respond with a JSON array only (no wrapper object). Use this exact schema:
 [
   {
     "module": "<module name, must match one from the list above>",
-    "question": "<question text>",
+    "question": "<question text — keep it short and simple>",
     "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
     "correct": "<the exact text of the correct option>",
     "expected_accuracy": <0.0-1.0, estimated probability a child of this age gets this right>
@@ -76,6 +79,8 @@ export function getLessonPlanPrompt(
   weaknesses: string[],
   moduleName: string
 ): string {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - yearOfBirth;
   const completedStr =
     completedModules.length > 0 ? completedModules.join(", ") : "None";
   const strengthsStr =
@@ -83,32 +88,54 @@ export function getLessonPlanPrompt(
   const weaknessesStr =
     weaknesses.length > 0 ? weaknesses.join(", ") : "None identified yet";
 
-  return `You are an AI tutor teaching mathematics to a child.
+  // Tailor vocabulary and tone guidance to the child's age
+  let languageGuidance: string;
+  if (age <= 6) {
+    languageGuidance = `The child is ${age} years old. Use very simple words (Year 1–2 reading level). Short sentences of 5–8 words. Use fun, playful language like you are talking to a small child. Use lots of examples with pictures described in words (e.g. "Imagine you have 3 apples 🍎🍎🍎").`;
+  } else if (age <= 8) {
+    languageGuidance = `The child is ${age} years old. Use simple, clear language (Year 3–4 reading level). Keep sentences under 12 words where possible. Explain new words when you first use them. Use relatable everyday examples (sweets, toys, pocket money).`;
+  } else if (age <= 10) {
+    languageGuidance = `The child is ${age} years old. Use clear, straightforward language (Year 5–6 reading level). You can use basic maths vocabulary but always explain it briefly on first use. Examples should feel relevant to their daily life.`;
+  } else {
+    languageGuidance = `The child is ${age} years old. Use clear language suitable for a secondary school student. Maths terminology is fine but define any specialist words. You can use slightly more complex sentence structures.`;
+  }
+
+  return `You are a friendly AI maths tutor teaching a child.
 
 Child profile:
-- Year of birth: ${yearOfBirth}
+- Age: ${age} years old (born ${yearOfBirth})
 - Current ability level: ${level} out of 8
 - Modules already completed: ${completedStr}
 - Demonstrated strengths: ${strengthsStr}
 - Areas of difficulty: ${weaknessesStr}
 
-Task: Generate a lesson plan to teach: ${moduleName}.
+Language and tone:
+${languageGuidance}
 
-Principles:
-- Be Socratic — guide the child to discover answers rather than simply telling them.
-- Teach concepts and vocabulary first, then interrogate with knowledge checks.
-- Calibrate difficulty to the child's level.
-- Embed knowledge checks throughout the lesson.
-- Where a diagram would help understanding, generate it as SVG.
-- Use age-appropriate language.
+Task: Generate a lesson to teach: ${moduleName}.
+
+CRITICAL formatting rules — you MUST follow these:
+1. Each section must be SHORT — maximum 3 to 5 sentences of content. Never write a wall of text.
+2. Introduce only ONE small idea per section. Do not cram multiple concepts together.
+3. Use line breaks between sentences to make reading easy.
+4. Start with something the child already knows, then build ONE step forward.
+5. Use a concrete example or analogy in every teaching section.
+6. Generate 8 to 12 short sections in total, alternating between teaching and knowledge checks.
+7. At least 4 sections must have a knowledge_check.
+8. Knowledge checks should be simple and test the ONE idea just taught.
+
+Teaching principles:
+- Be Socratic — ask the child to think before revealing answers.
+- Be warm, encouraging, and conversational — write as if chatting to the child.
+- Use emoji sparingly to keep things friendly (1–2 per section max).
 - Do not use garlic in any word problems involving food.
 
 Respond with valid JSON only. Use this exact schema:
 {
   "sections": [
     {
-      "title": "<section title>",
-      "content": "<lesson content as plain text with line breaks for paragraphs>",
+      "title": "<short, friendly section title>",
+      "content": "<lesson content — MAXIMUM 3-5 sentences, plain text with line breaks>",
       "knowledge_check": null or {
         "question": "<question text>",
         "type": "multiple_choice" or "free_text",
@@ -123,7 +150,7 @@ Respond with valid JSON only. Use this exact schema:
 Important:
 - Each section MUST have a "content" field with the teaching content as plain text.
 - Sections without a knowledge check should have "knowledge_check": null.
-- Generate 4-6 sections alternating between teaching and knowledge checks.
+- Keep every "content" value SHORT. If you find yourself writing more than 5 sentences, split it into two sections.
 - Do NOT use markdown formatting in content — use plain text only.
 - Respond with ONLY the JSON object. No markdown, no explanation.`;
 }
@@ -154,15 +181,17 @@ export function getPracticePrompt(
   strengths: string[],
   weaknesses: string[]
 ): string {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - yearOfBirth;
   const strengthsStr =
     strengths.length > 0 ? strengths.join(", ") : "None identified yet";
   const weaknessesStr =
     weaknesses.length > 0 ? weaknesses.join(", ") : "None identified yet";
 
-  return `You are an AI tutor generating a practice session for a child.
+  return `You are an AI tutor generating a practice session for a ${age}-year-old child.
 
 Child profile:
-- Year of birth: ${yearOfBirth}
+- Age: ${age} years old (born ${yearOfBirth})
 - Current ability level: ${level} out of 8
 - Module being practised: ${moduleName}
 - Cumulative practice EMA score in this module: ${emaScore.toFixed(4)}
@@ -178,13 +207,14 @@ Rules:
 - If EMA score is below -0.15, reduce difficulty.
 - Focus more questions on demonstrated areas of weakness.
 - Questions should be varied and not repetitive.
-- Use age-appropriate language.
+- Use simple, clear language appropriate for a ${age}-year-old. Keep questions short.
+- Do not use garlic in any word problems involving food.
 
 Respond with a JSON array only (no wrapper object). Use this exact schema:
 [
   {
     "type": "multiple_choice" or "free_text",
-    "question": "<question text>",
+    "question": "<question text — keep it short and age-appropriate>",
     "options": ["<option A>", "<option B>", "<option C>", "<option D>"],
     "correct": "<the exact text of the correct answer>",
     "expected_accuracy": <0.0-1.0, estimated probability the child gets this right>
@@ -220,9 +250,10 @@ export function getDiagnosticPrompt(
   studentExplanation: string,
   yearOfBirth: number
 ): string {
-  return `You are an AI maths tutor helping a child understand where they went wrong.
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - yearOfBirth;
 
-The child was born in ${yearOfBirth}.
+  return `You are a friendly AI maths tutor helping a ${age}-year-old child understand where they went wrong.
 
 Question: ${question}
 Student's answer: ${studentAnswer}
@@ -234,7 +265,7 @@ Task:
 2. Identify the specific misconception or error in their reasoning.
 3. Explain clearly what went wrong and why the correct answer is right.
 4. Frame your feedback constructively and encouragingly.
-5. Calibrate your language to the child's reading level based on their year of birth.
+5. Use simple language appropriate for a ${age}-year-old. Keep sentences short.
 
 Respond with valid JSON only. Use this schema:
 {

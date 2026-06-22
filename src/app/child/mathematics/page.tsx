@@ -18,7 +18,7 @@ export default function MathematicsPage() {
   const [loadingModules, setLoadingModules] = useState(true);
 
   useEffect(() => {
-    if (!loading && (!user || userType !== 'child' || !childSession)) {
+    if (!loading && (userType !== 'child' || !childSession)) {
       router.push('/login');
     }
   }, [user, loading, userType, childSession, router]);
