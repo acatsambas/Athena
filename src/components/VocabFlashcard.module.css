@@ -1,0 +1,186 @@
+/* ── VocabFlashcard ─────────────────────────────────────────
+   3D flip-card for vocabulary learn mode.
+   Uses perspective & backface-visibility for true card flip.
+   ───────────────────────────────────────────────────────── */
+
+/* ── Container ── */
+.flashcardContainer {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+/* ── Card wrapper (preserves 3D space) ── */
+.flashcard {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.flashcardFlipped {
+  transform: rotateY(180deg);
+}
+
+/* ── Shared face styles ── */
+.cardFront,
+.cardBack {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-6);
+
+  background-color: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Gradient border glow via background-image on the front ── */
+.cardFront {
+  background-image:
+    linear-gradient(var(--color-surface), var(--color-surface)),
+    linear-gradient(135deg, #2DD4BF, #10B981);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* ── Back face ── */
+.cardBack {
+  transform: rotateY(180deg);
+  background-image:
+    linear-gradient(var(--color-surface), var(--color-surface)),
+    linear-gradient(135deg, #10B981, #059669);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* ── Typography ── */
+.word {
+  font-family: var(--font-child);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--color-text);
+  text-align: center;
+  line-height: var(--leading-tight);
+}
+
+.definition {
+  font-family: var(--font-child);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: var(--leading-relaxed);
+  max-width: 480px;
+}
+
+.definitionLabel {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #10B981;
+}
+
+/* ── Buttons ── */
+.showBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  border: 2px solid #2DD4BF;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #2DD4BF, #10B981);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.showBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), 0 0 16px rgba(16, 185, 129, 0.3);
+}
+
+.showBtn:active {
+  transform: translateY(0);
+}
+
+.nextBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  border: 2px solid #10B981;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.nextBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), 0 0 16px rgba(5, 150, 105, 0.3);
+}
+
+.nextBtn:active {
+  transform: translateY(0);
+}
+
+/* ── Card counter ── */
+.counter {
+  font-family: var(--font-child);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .flashcard {
+    min-height: 260px;
+  }
+
+  .word {
+    font-size: var(--text-2xl);
+  }
+
+  .definition {
+    font-size: var(--text-lg);
+  }
+
+  .cardFront,
+  .cardBack {
+    padding: var(--space-6) var(--space-4);
+  }
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { marked } from 'marked';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,6 +110,7 @@ export default function LearnPage() {
   const [diagnosticCorrectAnswer, setDiagnosticCorrectAnswer] = useState('');
 
   const staticModule = getModuleById(moduleId);
+  const loadStartedRef = useRef(false);
 
   useEffect(() => {
     if (!loading && (userType !== 'child' || !childSession)) {
@@ -119,7 +120,8 @@ export default function LearnPage() {
 
   // Load or generate lesson plan
   const loadLessonPlan = useCallback(async () => {
-    if (!childSession || !staticModule) return;
+    if (!childSession || !staticModule || loadStartedRef.current) return;
+    loadStartedRef.current = true;
 
     try {
       const moduleRef = doc(
@@ -366,7 +368,7 @@ Rules:
             <div className="card error-card">
               <h2>Something went wrong</h2>
               <p>{errorMsg}</p>
-              <button className="btn btn-primary" onClick={() => { setPhase('loading'); setErrorMsg(''); }}>
+              <button className="btn btn-primary" onClick={() => { loadStartedRef.current = false; setPhase('loading'); setErrorMsg(''); }}>
                 Try Again
               </button>
             </div>

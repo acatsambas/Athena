@@ -198,17 +198,22 @@ Child profile:
 - Demonstrated strengths: ${strengthsStr}
 - Areas of difficulty: ${weaknessesStr}
 
-Task: Generate a set of 5 practice questions for ${moduleName}.
+Task: Generate a set of 6 practice questions for ${moduleName}.
+
+CRITICAL — Difficulty distribution:
+- Questions 1–3: At the child's CURRENT level (calibrated to their EMA score). These should have expected_accuracy around 0.5–0.65 for this child.
+- Questions 4–5: HARDER than the child's current level. Push the difficulty up — these should have expected_accuracy around 0.25–0.40 for this child.
+- Question 6: SIGNIFICANTLY above the child's current level — a genuine stretch challenge. This should have expected_accuracy around 0.10–0.25 for this child.
+
+This distribution is essential so that the child's EMA can increase when they get harder questions right. If all questions are at their current level, the EMA stagnates.
 
 Rules:
 - Mix question formats: multiple-choice and short free-text answers.
-- Calibrate difficulty to the child's level.
-- If EMA score is above +0.15, increase difficulty.
-- If EMA score is below -0.15, reduce difficulty.
 - Focus more questions on demonstrated areas of weakness.
 - Questions should be varied and not repetitive.
 - Use simple, clear language appropriate for a ${age}-year-old. Keep questions short.
 - Do not use garlic in any word problems involving food.
+- Order the questions from easiest to hardest (questions 1–3 current level, then 4–6 progressively harder).
 
 Respond with a JSON array only (no wrapper object). Use this exact schema:
 [

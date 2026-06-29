@@ -74,6 +74,8 @@ export default function ChildDashboard() {
   const mathSubject = subjects.find((s) => s.id === 'mathematics');
   const hasStartedMath = mathSubject?.assessmentComplete;
 
+  const englishSubject = subjects.find((s) => s.id === 'english');
+
   return (
     <div className="dashboard-page child-dashboard">
       <Header
@@ -155,14 +157,43 @@ export default function ChildDashboard() {
                 </div>
               </div>
 
-              <div className="card subject-card subject-card-locked">
+              <div className="card subject-card" id="subject-english">
                 <div className="subject-card-header">
                   <span className="subject-icon">📖</span>
                   <h3>English</h3>
                 </div>
-                <div className="subject-card-body">
-                  <p className="text-muted">Coming soon!</p>
-                </div>
+
+                {!englishSubject ? (
+                  <div className="subject-card-body">
+                    <p className="subject-description">
+                      Build your vocabulary! Start learning new words and
+                      test yourself with fun quizzes.
+                    </p>
+                    <button
+                      id="btn-start-english"
+                      className="btn btn-primary btn-lg btn-full"
+                      onClick={() => router.push('/child/english')}
+                    >
+                      📚 Start Learning!
+                    </button>
+                  </div>
+                ) : (
+                  <div className="subject-card-body">
+                    <div className="subject-stats">
+                      <div className="stat">
+                        <span className="stat-value">{englishSubject.totalAnswers}</span>
+                        <span className="stat-label">Questions Answered</span>
+                      </div>
+                    </div>
+                    <button
+                      id="btn-view-english"
+                      className="btn btn-primary btn-full"
+                      onClick={() => router.push('/child/english')}
+                    >
+                      Continue Learning →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

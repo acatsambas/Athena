@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -60,6 +60,8 @@ export default function PracticePage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [moduleCompleted, setModuleCompleted] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
+  const resultsRef = useRef<{ correct: boolean; expectedAccuracy: number }[]>([]);
+  const loadStartedRef = useRef(false);
 
   // Diagnostic state
   const [diagnosticQuestion, setDiagnosticQuestion] = useState('');
@@ -76,7 +78,8 @@ export default function PracticePage() {
 
   // Generate practice questions
   const generateQuestions = useCallback(async () => {
-    if (!childSession || !staticModule) return;
+    if (!childSession || !staticModule || loadStartedRef.current) return;
+    loadStartedRef.current = true;
 
     try {
       // Load current module and subject data
@@ -165,7 +168,11 @@ Rules:
       }
     }
 
-    const newResults = [...results, { correct: isCorrect, expectedAccuracy: question.expected_accuracy }];
+    // Always build from the ref (source of truth) — not the closure-captured
+    // `results` state, which can be stale after async awaits in earlier calls.
+    const newEntry = { correct: isCorrect, expectedAccuracy: question.expected_accuracy };
+    const newResults = [...resultsRef.current, newEntry];
+    resultsRef.current = newResults;
     setResults(newResults);
 
     if (isCorrect) {
@@ -201,7 +208,7 @@ Rules:
       setCurrentIndex(currentIndex + 1);
       setPhase('answering');
     } else {
-      await saveResults(results);
+      await saveResults(resultsRef.current);
     }
   };
 
@@ -325,7 +332,7 @@ Rules:
             <div className="card error-card">
               <h2>Something went wrong</h2>
               <p>{errorMsg}</p>
-              <button className="btn btn-primary" onClick={() => { setPhase('loading'); setErrorMsg(''); }}>
+              <button className="btn btn-primary" onClick={() => { loadStartedRef.current = false; setPhase('loading'); setErrorMsg(''); }}>
                 Try Again
               </button>
             </div>
@@ -417,9 +424,11 @@ Rules:
                     setPhase('loading');
                     setQuestions([]);
                     setResults([]);
+                    resultsRef.current = [];
                     setCurrentIndex(0);
                     setPointsEarned(0);
                     setModuleCompleted(false);
+                    loadStartedRef.current = false;
                   }}
                 >
                   Practice Again

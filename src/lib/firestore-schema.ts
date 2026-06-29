@@ -85,6 +85,26 @@ export interface SubjectProgress {
 }
 
 // ---------------------------------------------------------------
+// Vocabulary Level Progress (stored inside ModuleProgress.lessonPlan)
+// ---------------------------------------------------------------
+
+/**
+ * Tracks per-level progress within the Vocabulary module.
+ * Stored as a map inside the ModuleProgress document's `lessonPlan` field:
+ * `lessonPlan: { levels: Record<string, VocabLevelProgress> }`
+ */
+export interface VocabLevelProgress {
+  /** Number of practice answers submitted at this level */
+  answerCount: number;
+  /** Number of correct answers at this level */
+  correctCount: number;
+  /** Whether this level is unlocked */
+  unlocked: boolean;
+  /** Whether this level is completed (passed) */
+  completed: boolean;
+}
+
+// ---------------------------------------------------------------
 // Module Progress
 // ---------------------------------------------------------------
 
@@ -99,7 +119,11 @@ export interface ModuleProgress {
   moduleNumber: number;
   /** Whether the module is locked, unlocked, or completed */
   status: ModuleStatus;
-  /** AI-generated lesson plan, null until generated */
+  /**
+   * AI-generated lesson plan, null until generated.
+   * For the Vocabulary module, this stores level progress:
+   * `{ levels: Record<string, VocabLevelProgress> }`
+   */
   lessonPlan: Record<string, unknown> | null;
   /** Percentage of the lesson completed (0–100) */
   lessonProgress: number;
